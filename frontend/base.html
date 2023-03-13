@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Account Test</title>
+</head>
+<body>
+    <div>
+        <h3>Create Account</h3>
+        <input type="text" id="owners"/>
+        <button onclick="createAccount()">Create</button>
+    </div>
+    <div>
+        <h3>View Account</h3>
+        <p id="accounts"></p>
+        <button onclick="viewAccounts()">View</button>
+        <button onclick="start()">start</button>
+    </div>
+    <div id="events"></div>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"
+        type="application/javascript">
+    </script>
+    <script>
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+const abi = [
+    "event AccountCreated(address[] owners, uint256 indexed id, uint256 timestamp)",
+    "event Deposit(address indexed user, uint256 indexed accountId, uint256 value, uint256 timestamp)",
+    "event Withdraw(uint256 indexed withdrawId, uint256 timestamp)",
+    "event WithdrawRequested(address indexed user, uint256 indexed accountId, uint256 indexed withdrawId, uint256 amount, uint256 timestamp)",
+    "function approveWithdrawal(uint256 accountId, uint256 withdrawalId)",
+    "function createAccount(address[] otherOwners)",
+    "function deposit(uint256 accountId) payable",
+    "function getAccounts() view returns (uint256[])",
+    "function getApprovals(uint256 accountId, uint256 withdrawId) view returns (uint256)",
+    "function getBalance(uint256 accountId) view returns (uint256)",
+    "function getOwners(uint256 accountId) view returns (address[])",
+    "function requestWithdrawal(uint256 accountId, uint256 amount)",
+    "function withdraw(uint256 accountId, uint256 withdrawId)"
+]
+
+const address = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+let contract = null
+
+async function createAccounts() {
+    await getAccess()
+    const owners = document.getElementById('owners').innerText.split(',').filter(n => n)
+
+    await contract.createAccounts(owners).then(() => alert("success"))
+}
+
+async function viewAccounts() {
+    await getAccess()
+    const result = await contract.getAccounts()
+    document.getElementById('accounts').innerHTML = result
+}
+
+async function getAccess() {
+    if(contract) return
+    await provider.send('eth_requestAccounts', [])
+    const signer = provider.getSigner()
+    contract = new ethers.Contract(address, abi, signer)
+
+    const eventLog = document.getElementById('events')
+    contract.on('AccountCreated', (owners, id, event) => {
+        eventLog.append(`Account Created: ID = ${id}, Owners = ${owners}`)
+    })
+}
+    </script>
+</body>
+</html>
